@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-smoke-test:
+    name: Lint & Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies (CPU-only torch)
+        run: |
+          pip install --upgrade pip
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          pip install pyflakes numpy
+
+      - name: Syntax check (pyflakes)
+        run: pyflakes src/ configs/
+
+      - name: Verify imports
+        run: |
+          python -c "from src.model import Generator, Discriminator, weights_init; print('model.py ✓')"
+          python -c "from src.utils import set_seed, AverageMeter, save_checkpoint, denorm; print('utils.py ✓')"
+          python -c "from configs.config import DCGANConfig; print('config.py ✓')"
+
+      - name: Smoke test — Generator forward pass
+        run: |
+          python - <<'EOF'
+          import torch
+          from src.model import Generator, Discriminator, weights_init
+          from configs.config import DCGANConfig
+
+          cfg = DCGANConfig()
+
+          # Generator: z → fake image
+          G = Generator(cfg.latent_dim, cfg.n_filters, cfg.num_channels)
+          G.apply(weights_init)
+          z = torch.randn(4, cfg.latent_dim, 1, 1)
+          fake = G(z)
+          assert fake.shape == (4, 3, 64, 64), f"Unexpected shape: {fake.shape}"
+          assert fake.min() >= -1.01 and fake.max() <= 1.01, "Output not in [-1,1]"
+          print(f"Generator output: {fake.shape}  params: {G.num_parameters():,}")
+
+          # Discriminator: image → probability
+          D = Discriminator(cfg.n_filters, cfg.num_channels)
+          D.apply(weights_init)
+          out = D(fake)
+          assert out.shape == (4, 1, 1, 1), f"Unexpected shape: {out.shape}"
+          assert (out >= 0).all() and (out <= 1).all(), "Output not in [0,1]"
+          print(f"Discriminator output: {out.shape}  params: {D.num_parameters():,}")
+
+          # Adversarial loss
+          import torch.nn as nn
+          criterion = nn.BCELoss()
+          label_real = torch.ones(4)
+          loss = criterion(out.view(-1), label_real)
+          loss.backward()
+          print(f"BCELoss (fake as real): {loss.item():.4f}")
+          print("All smoke tests passed.")
+          EOF
