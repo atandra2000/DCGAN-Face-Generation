@@ -11,7 +11,6 @@ Transforms applied (matching Kaggle training run):
   - ColorJitter (brightness=0.3, contrast=0.3, saturation=0.3)
 """
 
-import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from pathlib import Path

@@ -10,13 +10,12 @@ Experiment tracking: Comet ML (set COMET_API_KEY env var or disable with --no-co
 
 import argparse
 import os
-import random
 from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision.utils import save_image, make_grid
+from torchvision.utils import save_image
 from tqdm import tqdm
 
 from src.model import Generator, Discriminator, weights_init

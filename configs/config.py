@@ -3,8 +3,7 @@ DCGANConfig — central hyperparameter dataclass.
 
 All values match the Kaggle training run (GPU T4 x2, CelebA dataset).
 """
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 
 
 @dataclass
