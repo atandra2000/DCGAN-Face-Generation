@@ -54,7 +54,89 @@ The model learns to map 100-dimensional Gaussian noise vectors to perceptually r
 
 ## Architecture
 
-### Generator — Noise → Image
+### Generator &mdash; Noise &rarr; Image
+
+```mermaid
+flowchart LR
+    Z["z ∈ ℝ¹⁴⁰<br/>Gaussian noise"]:::in
+    G1["ConvT 4×4 s1<br/>100 → 512"]:::g
+    G2["ConvT 4×4 s2<br/>512 → 256"]:::g
+    G3["ConvT 4×4 s2<br/>256 → 128"]:::g
+    G4["ConvT 4×4 s2<br/>128 → 64"]:::g
+    G5["ConvT 4×4 s2<br/>64 → 3"]:::g
+    BN["BatchNorm"]:::bn
+    RELU["ReLU"]:::act
+    TANH["Tanh"]:::act
+    OUT["fake image<br/>3 × 64 × 64<br/>∈ [-1, 1]"]:::out
+
+    Z --> G1 --> BN --> RELU --> G2 --> BN --> RELU --> G3 --> BN --> RELU --> G4 --> BN --> RELU --> G5 --> TANH --> OUT
+
+    classDef in fill:#e0e7ff,stroke:#3730a3,color:#000
+    classDef g fill:#dbeafe,stroke:#1d4ed8,color:#000
+    classDef bn fill:#f3f4f6,stroke:#374151,color:#000
+    classDef act fill:#fce7f3,stroke:#9d174d,color:#000
+    classDef out fill:#bbf7d0,stroke:#15803d,color:#000
+```
+
+### Discriminator &mdash; Image &rarr; Real/Fake
+
+```mermaid
+flowchart LR
+    X["x ∈ [-1,1]<sup>3×64×64</sup><br/>image"]:::in
+    D1["Conv 4×4 s2<br/>3 → 64"]:::d
+    D2["Conv 4×4 s2<br/>64 → 128"]:::d
+    D3["Conv 4×4 s2<br/>128 → 256"]:::d
+    D4["Conv 4×4 s2<br/>256 → 512"]:::d
+    D5["Conv 4×4 s1<br/>512 → 1"]:::d
+    LRELU["LeakyReLU(0.2)"]:::act
+    SIG["Sigmoid"]:::act
+    OUT["p ∈ (0, 1)<br/>P(real)"]:::out
+
+    X --> D1 --> LRELU --> D2 --> BN1["BN"]:::bn --> LRELU --> D3 --> BN2["BN"]:::bn --> LRELU --> D4 --> BN3["BN"]:::bn --> LRELU --> D5 --> SIG --> OUT
+
+    classDef in fill:#e0e7ff,stroke:#3730a3,color:#000
+    classDef d fill:#fce7f3,stroke:#9d174d,color:#000
+    classDef bn fill:#f3f4f6,stroke:#374151,color:#000
+    classDef act fill:#fde68a,stroke:#b45309,color:#000
+    classDef out fill:#bbf7d0,stroke:#15803d,color:#000
+```
+
+### Adversarial Training Loop
+
+```mermaid
+sequenceDiagram
+    participant Z as Noise z
+    participant G as Generator G
+    participant D as Discriminator D
+    participant L as Loss & Optimizer
+
+    Note over L: Non-saturating GAN loss<br/>maximize log D(G(z))
+    loop For each batch (real x, noise z)
+        L->>D: D_real = D(x)
+        L->>G: x_fake = G(z).detach()
+        L->>D: D_fake = D(x_fake)
+        L->>D: BCE(D_real, 1) + BCE(D_fake, 0)
+        L->>D: update D with Adam(lr=2e-4, beta1=0.5)
+        L->>G: x_fake = G(z)
+        L->>D: D_fake = D(x_fake)
+        L->>G: BCE(D_fake, 1)
+        L->>G: update G with Adam(lr=2e-4, beta1=0.5)
+    end
+    Note over G,D: N(0, 0.02) init throughout<br/>50 epochs · batch 128
+```
+
+### Equilibrium &mdash; the discriminator target
+
+```mermaid
+graph LR
+    A["Trained: D(x) → 0.58<br/>D(G(z)) → 0.44<br/>G loss 5.5 → 1.82"]:::goal
+    B["Theoretical: D(x) → 0.5<br/>D(G(z)) → 0.5<br/>D loss → ln(2)"]:::theory
+    A ==>|"approaching"| B
+    classDef goal fill:#bbf7d0,stroke:#15803d,color:#000
+    classDef theory fill:#dbeafe,stroke:#1d4ed8,color:#000
+```
+
+### Text Alternative (ASCII)
 
 ```
 z ∈ ℝ¹⁰⁰ (noise)
@@ -72,7 +154,7 @@ z ∈ ℝ¹⁰⁰ (noise)
 fake image ∈ [-1,1]^(3×64×64)
 ```
 
-### Discriminator — Image → Real/Fake
+### Discriminator &mdash; Image &rarr; Real/Fake
 
 ```
 x ∈ [-1,1]^(3×64×64) (image)
@@ -88,7 +170,6 @@ x ∈ [-1,1]^(3×64×64) (image)
        │
        ▼
 p ∈ (0,1)  [probability of being real]
-```
 
 ### Model Parameters
 
