@@ -54,52 +54,13 @@ The model learns to map 100-dimensional Gaussian noise vectors to perceptually r
 
 ## Architecture
 
-### Generator &mdash; Noise &rarr; Image
+### Generator &mdash; Noise → Image
 
-```mermaid
-flowchart LR
-    Z["z ∈ ℝ¹⁴⁰<br/>Gaussian noise"]:::in
-    G1["ConvT 4×4 s1<br/>100 → 512"]:::g
-    G2["ConvT 4×4 s2<br/>512 → 256"]:::g
-    G3["ConvT 4×4 s2<br/>256 → 128"]:::g
-    G4["ConvT 4×4 s2<br/>128 → 64"]:::g
-    G5["ConvT 4×4 s2<br/>64 → 3"]:::g
-    BN["BatchNorm"]:::bn
-    RELU["ReLU"]:::act
-    TANH["Tanh"]:::act
-    OUT["fake image<br/>3 × 64 × 64<br/>∈ [-1, 1]"]:::out
+See the [Text Alternative (ASCII)](#text-alternative-ascii) section below for the compact ASCII flow.
 
-    Z --> G1 --> BN --> RELU --> G2 --> BN --> RELU --> G3 --> BN --> RELU --> G4 --> BN --> RELU --> G5 --> TANH --> OUT
+### Discriminator &mdash; Image → Real/Fake
 
-    classDef in fill:#e0e7ff,stroke:#3730a3,color:#000
-    classDef g fill:#dbeafe,stroke:#1d4ed8,color:#000
-    classDef bn fill:#f3f4f6,stroke:#374151,color:#000
-    classDef act fill:#fce7f3,stroke:#9d174d,color:#000
-    classDef out fill:#bbf7d0,stroke:#15803d,color:#000
-```
-
-### Discriminator &mdash; Image &rarr; Real/Fake
-
-```mermaid
-flowchart LR
-    X["x ∈ [-1,1]<sup>3×64×64</sup><br/>image"]:::in
-    D1["Conv 4×4 s2<br/>3 → 64"]:::d
-    D2["Conv 4×4 s2<br/>64 → 128"]:::d
-    D3["Conv 4×4 s2<br/>128 → 256"]:::d
-    D4["Conv 4×4 s2<br/>256 → 512"]:::d
-    D5["Conv 4×4 s1<br/>512 → 1"]:::d
-    LRELU["LeakyReLU(0.2)"]:::act
-    SIG["Sigmoid"]:::act
-    OUT["p ∈ (0, 1)<br/>P(real)"]:::out
-
-    X --> D1 --> LRELU --> D2 --> BN1["BN"]:::bn --> LRELU --> D3 --> BN2["BN"]:::bn --> LRELU --> D4 --> BN3["BN"]:::bn --> LRELU --> D5 --> SIG --> OUT
-
-    classDef in fill:#e0e7ff,stroke:#3730a3,color:#000
-    classDef d fill:#fce7f3,stroke:#9d174d,color:#000
-    classDef bn fill:#f3f4f6,stroke:#374151,color:#000
-    classDef act fill:#fde68a,stroke:#b45309,color:#000
-    classDef out fill:#bbf7d0,stroke:#15803d,color:#000
-```
+See the [Text Alternative (ASCII)](#text-alternative-ascii) section below for the compact ASCII flow.
 
 ### Adversarial Training Loop
 
@@ -153,23 +114,6 @@ z ∈ ℝ¹⁰⁰ (noise)
        ▼
 fake image ∈ [-1,1]^(3×64×64)
 ```
-
-### Discriminator &mdash; Image &rarr; Real/Fake
-
-```
-x ∈ [-1,1]^(3×64×64) (image)
-       │
-       ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Conv2d(  3 →  64)  4×4 s2 p1  │           │ LeakyReLU(0.2)   │  → ( 64,32,32)
-│  Conv2d( 64 → 128)  4×4 s2 p1  │ BatchNorm │ LeakyReLU(0.2)   │  → (128,16,16)
-│  Conv2d(128 → 256)  4×4 s2 p1  │ BatchNorm │ LeakyReLU(0.2)   │  → (256, 8, 8)
-│  Conv2d(256 → 512)  4×4 s2 p1  │ BatchNorm │ LeakyReLU(0.2)   │  → (512, 4, 4)
-│  Conv2d(512 →   1)  4×4 s1 p0  │           │ Sigmoid          │  → (  1, 1, 1)
-└─────────────────────────────────────────────────────────────────┘
-       │
-       ▼
-p ∈ (0,1)  [probability of being real]
 
 ### Model Parameters
 
