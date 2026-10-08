@@ -42,3 +42,6 @@ results/*.jpg
 
 # Comet ML
 .comet.config
+
+# codegraph index (binary, local only)
+.codegraph/

@@ -6,8 +6,7 @@
 > **Project:** `Vision/DCGAN-Face-Generation/` · **Type:** unconditional GAN
 > **Task:** 64×64 face generation from Gaussian noise
 > **Hardware:** 2× NVIDIA T4 (Kaggle) · **Status:** complete (50 epochs)
-> **Architecture detail:** see `README.md §9`; cross-project guidance at
-> `.agents/skills/generative-vision-gans-vaes/SKILL.md §1`.
+> **Architecture detail:** see `README.md §9`.
 
 ## 1. Subagent: `gan-trainer-debugger`
 
